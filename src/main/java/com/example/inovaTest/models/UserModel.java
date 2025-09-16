@@ -57,8 +57,6 @@ public class UserModel implements UserDetails {
 
     private String profilePicture; // path da foto de perfil
 
-    private String profileDescription; // bio 
-
 
     public UserModel(String login, String password, String email, String gender, LocalDate  dateOfBirth ){
         this.login = login;

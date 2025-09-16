@@ -7,7 +7,7 @@ public enum GenderRole {
 
     public static GenderRole fromString(String value) {
         if (value == null || value.isBlank()) {
-            return GenderRole.OTHER; // ou lançar exceção, se preferir
+            return GenderRole.OTHER; 
         }
         try {
             return GenderRole.valueOf(value.toUpperCase());

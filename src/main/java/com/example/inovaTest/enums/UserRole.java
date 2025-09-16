@@ -3,7 +3,8 @@ package com.example.inovaTest.enums;
 
 public enum UserRole {
     ADMIN("admin"),
-    USER("user");
+    USER("user"),
+    SINDICO("sindico");
 
     private String role;
 
