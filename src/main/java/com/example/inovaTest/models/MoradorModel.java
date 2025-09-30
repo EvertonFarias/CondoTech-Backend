@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import com.example.inovaTest.enums.TipoMorador;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -50,10 +52,9 @@ public class MoradorModel {
     @Size(max = 100, message = "Email deve ter no máximo 100 caracteres")
     private String email;
 
-    @Column(name = "tipo_morador", length = 20)
-    @Size(max = 20, message = "Tipo de morador deve ter no máximo 20 caracteres")
-    private String tipoMorador; // Ex: Proprietário, Inquilino, Responsável
-
+@Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoMorador tipo;
     @Column(nullable = false)
     private Boolean ativo = true;
 
@@ -77,4 +78,8 @@ public class MoradorModel {
 
     @OneToMany(mappedBy = "morador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<AnaliseIaModel> analisesIa;
+
+    @OneToMany(mappedBy = "morador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<VehicleModel> veiculos;
+    
 }

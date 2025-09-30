@@ -71,46 +71,6 @@ public class AuthenticationController {
         return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid RegisterDTO data) {
-        try {
-            UserModel newUser = authService.registerUser(data);
-            UserResponseDTO responseDTO = new UserResponseDTO(
-                newUser.getId(),
-                newUser.getLogin(),
-                newUser.getEmail(),
-                newUser.getRole(),
-                newUser.isVerifiedEmail(),
-                newUser.getGender(),
-                newUser.getDateOfBirth(),
-                newUser.isEnabled(),
-                newUser.getProfilePicture()
-            );
-
-            String token = UUID.randomUUID().toString();
-            EmailVerificationToken verificationToken = new EmailVerificationToken(token, newUser);
-            tokenRepository.save(verificationToken);
-
-            System.out.println("Preparando para enviar e-mail de verificação para: " + newUser.getEmail());
-            String verificationUrl = backendUrl + "/auth/verify?token=" + token;
-
-            
-            String htmlContent = emailService.loadEmailTemplateVerification(newUser.getLogin(), verificationUrl);
-            System.out.println("Template de e-mail carregado com sucesso. Enviando e-mail...");
-            // Envia o e-mail
-            emailService.sendEmail(newUser.getEmail(), "Verificação de E-mail", htmlContent);
-            System.out.println("E-mail de verificação enviado com sucesso para: " + newUser.getEmail());
-
-            return ResponseEntity.ok(responseDTO);
-        } catch (ConflictException e) {
-            String errorMessage = e.getMessage();
-            return ResponseEntity.badRequest().body(errorMessage);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao carregar o template de e-mail.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while processing the request.");
-        }
-    }
 
     @GetMapping("/verify") // rota para verificar o token
     public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
