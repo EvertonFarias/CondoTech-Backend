@@ -16,8 +16,8 @@ public record UserResponseDTO(
     String login,
     String email,
     UserRole role,
-
     // Dados do MoradorModel (perfil)
+    Long moradorId,
     String name,
     String phone,
     String unit,
@@ -41,7 +41,11 @@ public record UserResponseDTO(
             user.getEmail(),
             user.getRole(),
 
-            // Dados obtidos através da relação com MoradorModel
+            
+            (user.getMorador() != null) 
+                ? user.getMorador().getId()
+                : null, 
+            
             (user.getMorador() != null) 
                 ? user.getMorador().getNome() 
                 : user.getLogin(), // Fallback para o login se não houver nome
