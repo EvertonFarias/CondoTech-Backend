@@ -13,6 +13,7 @@ import com.example.inovaTest.repositories.MoradorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
@@ -38,6 +39,7 @@ public class OcorrenciaController {
     private FileStorageService fileStorageService;
 
     // só para ADMIN 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> search(
             @RequestParam(defaultValue = "") String query,
@@ -64,6 +66,7 @@ public class OcorrenciaController {
     }
 
     // Apenas morador usa
+    
     @GetMapping("/morador/{moradorId}/search")
     public ResponseEntity<Map<String, Object>> searchByMorador(
             @PathVariable Long moradorId,
