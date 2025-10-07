@@ -1,23 +1,36 @@
 package com.example.inovaTest.repositories;
 
 import com.example.inovaTest.models.OcorrenciaModel;
-
-import java.util.Collection;
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface OcorrenciaRepository extends JpaRepository<OcorrenciaModel, Long> {
 
-    // Encontra todas as ocorrências cujo status NÃO esteja na lista fornecida.
-    // isso para filtrar as ocorrências "CANCELADAS" da visualização principal.
-    List<OcorrenciaModel> findAllByStatusOcorrenciaNotIn(Collection<String> statuses);
+    @Query("SELECT o FROM OcorrenciaModel o WHERE " +
+           "(:query IS NULL OR :query = '' OR LOWER(o.titulo) LIKE :query OR LOWER(o.descricao) LIKE :query OR LOWER(o.morador.nome) LIKE :query) AND " +
+           "(:status IS NULL OR :status = '' OR o.statusOcorrencia = :status) AND " +
+           "(:tipo IS NULL OR :tipo = '' OR o.tipoOcorrencia = :tipo)")
+    Page<OcorrenciaModel> searchAll(
+        @Param("query") String query, 
+        @Param("status") String status, 
+        @Param("tipo") String tipo, 
+        Pageable pageable
+    );
 
-    // Versão otimizada para buscar ocorrências de um morador específico,
-    // também excluindo os status indesejados. Isso evita filtrar na memória.
-    List<OcorrenciaModel> findByMoradorIdAndStatusOcorrenciaNotIn(Long moradorId, Collection<String> statuses);
-
-
-    // Método para buscar ocorrências por status(canceladas, abertas, etc)
-    List<OcorrenciaModel> findByStatusOcorrencia(String status);
+    
+    @Query("SELECT o FROM OcorrenciaModel o WHERE " +
+           "o.morador.id = :moradorId AND " +
+           "(:query IS NULL OR :query = '' OR LOWER(o.titulo) LIKE :query OR LOWER(o.descricao) LIKE :query) AND " +
+           "(:status IS NULL OR :status = '' OR o.statusOcorrencia = :status) AND " +
+           "(:tipo IS NULL OR :tipo = '' OR o.tipoOcorrencia = :tipo)")
+    Page<OcorrenciaModel> searchByMorador(
+        @Param("moradorId") Long moradorId,
+        @Param("query") String query, 
+        @Param("status") String status, 
+        @Param("tipo") String tipo, 
+        Pageable pageable
+    );
 }
