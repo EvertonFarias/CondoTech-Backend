@@ -55,9 +55,11 @@ public class UserModel implements UserDetails {
     @Column(nullable = false)
     private LocalDate  dateOfBirth;
 
-    private String profilePicture; // path da foto de perfil
+    private String profilePicture; 
 
-
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private MoradorModel morador;
     public UserModel(String login, String password, String email, String gender, LocalDate  dateOfBirth ){
         this.login = login;
         this.password = password;
