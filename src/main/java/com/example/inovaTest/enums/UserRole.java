@@ -2,10 +2,10 @@ package com.example.inovaTest.enums;
 
 
 public enum UserRole {
-    ADMIN("admin"),
-    USER("user"),
-    SINDICO("sindico");
-
+    SUPERADMIN("superadmin"), // administrador geral(nós)
+    ADMIN("admin"),  // sindico
+    USER("user"); // morador
+    
     private String role;
 
     UserRole(String role){
