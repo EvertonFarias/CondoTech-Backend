@@ -49,8 +49,7 @@ public class EmailService {
         ClassPathResource resource = new ClassPathResource("templates/email/reset-password.html");
         String htmlContent = new String(Files.readAllBytes(Path.of(resource.getURI())));
 
-        return htmlContent.replace("${username}", username)
-                         .replace("${resetLink}", resetLink)
-                         .replace("${oceanBackgroundUrl}", "https://example.com/ocean-background.jpg");
+       return htmlContent.replace("{{username}}", username)
+                          .replace("{{resetLink}}", resetLink);
     }
 }

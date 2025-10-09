@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 
 import java.util.Date;
+import java.util.Map;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -40,7 +41,7 @@ import com.example.inovaTest.services.AuthService;
 import com.example.inovaTest.services.EmailService;
 
 @RestController
-@RequestMapping("auth")
+@RequestMapping("/auth")
 public class AuthenticationController {
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -58,14 +59,12 @@ public class AuthenticationController {
     private PasswordResetTokenRepository resetTokenRepository;
     @Value("${frontend.url}")
     private String frontendUrl;
-    @Value("${backend.url}")
-    private String backendUrl;
+
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data){
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
-
         var token = tokenService.generateToken((UserModel) auth.getPrincipal());
 
         return ResponseEntity.ok(new LoginResponseDTO(token));
@@ -96,20 +95,21 @@ public class AuthenticationController {
     }
 
 
-
-
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody @Valid ForgotPasswordDTO dto) {
+    public ResponseEntity<?> forgotPassword(@RequestBody @Valid ForgotPasswordDTO dto) {
+        System.out.println("📧 Solicitação de redefinição de senha recebida para o e-mail: " + dto.email());
+        
         UserModel user = (UserModel) userRepository.findByEmail(dto.email());
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado.");
+            System.out.println("❌ Usuário não encontrado: " + dto.email());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "Usuário não encontrado"));
         }
 
         try {
             // Verificar se já existe um token para este usuário
             Optional<PasswordResetToken> existingToken = resetTokenRepository.findByUser(user);
             if (existingToken.isPresent()) {
-                // Excluir token existente
                 resetTokenRepository.delete(existingToken.get());
             }
             
@@ -118,45 +118,63 @@ public class AuthenticationController {
             PasswordResetToken resetToken = new PasswordResetToken(token, user);
             resetTokenRepository.save(resetToken);
 
-            String resetLink = frontendUrl + "/auth/reset-password?token=" + token;
+            // MUDANÇA AQUI: usar o esquema do app ao invés de URL web
+            // String resetLink = "condotech://reset-password?token=" + token;
+            String resetLink = "exp://192.168.18.127:8081/--/(auth)/reset-password?token=" + token;
             String htmlContent = emailService.loadResetPasswordTemplate(user.getLogin(), resetLink);
             
             emailService.sendEmail(user.getEmail(), "Redefinição de Senha", htmlContent);
-            return ResponseEntity.ok("E-mail enviado.");
+            System.out.println("✅ E-mail enviado com sucesso");
+            
+            return ResponseEntity.ok(Map.of("message", "E-mail enviado com sucesso"));
             
         } catch (MessagingException e) {
-            System.out.println(e.getMessage());
+            System.out.println("❌ Erro ao enviar e-mail: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro ao enviar e-mail de redefinição de senha: " + e.getMessage());
+                .body(Map.of("message", "Erro ao enviar e-mail: " + e.getMessage()));
         } catch (IOException e) {
+            System.out.println("❌ Erro ao carregar template: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro ao carregar o template de redefinição de senha: " + e.getMessage());
+                .body(Map.of("message", "Erro ao carregar template: " + e.getMessage()));
         } catch (Exception e) {
-            System.err.println("Erro ao processar solicitação de redefinição de senha: " + e.getMessage());
+            System.err.println("❌ Erro inesperado: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro ao processar solicitação de redefinição de senha.");
+                .body(Map.of("message", "Erro ao processar solicitação"));
         }
     }
-
-
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody @Valid ResetPasswordDTO dto) {
+    public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordDTO dto) {
+        System.out.println("🔐 Tentando redefinir senha com token: " + dto.token());
+        
         Optional<PasswordResetToken> optionalToken = resetTokenRepository.findByToken(dto.token());
         if (optionalToken.isEmpty()) {
-            return ResponseEntity.badRequest().body("Token inválido.");
+            System.out.println("❌ Token inválido ou não encontrado");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "Token inválido."));
         }
 
         PasswordResetToken token = optionalToken.get();
         if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("Token expirado.");
+            System.out.println("❌ Token expirado");
+            resetTokenRepository.delete(token);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "Token expirado."));
         }
 
-        UserModel user = token.getUser();
-        user.setPassword(authService.encodePassword(dto.newPassword()));
-        userRepository.save(user);
-        resetTokenRepository.delete(token);
-        System.out.println("Senha redefinida com sucesso");
-        return ResponseEntity.ok("Senha redefinida com sucesso.");
+        try {
+            UserModel user = token.getUser();
+            user.setPassword(authService.encodePassword(dto.newPassword()));
+            userRepository.save(user);
+            resetTokenRepository.delete(token);
+            System.out.println("✅ Senha redefinida com sucesso para usuário: " + user.getLogin());
+            
+            return ResponseEntity.ok(Map.of("message", "Senha redefinida com sucesso."));
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao redefinir senha: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Erro ao redefinir senha: " + e.getMessage()));
+        }
     }
-
 }
