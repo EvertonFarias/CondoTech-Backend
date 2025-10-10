@@ -60,6 +60,13 @@ public class AuthenticationController {
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    @Value("${backend.ip}")
+    private String backendIp;
+
+    @Value("${backend.url}")
+    private String backendUrl;
+
+
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data){
@@ -71,7 +78,7 @@ public class AuthenticationController {
     }
 
 
-    @GetMapping("/verify") // rota para verificar o token
+    @GetMapping("/verify")
     public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
         Optional<EmailVerificationToken> optionalToken = tokenRepository.findByToken(token);
 
@@ -95,6 +102,64 @@ public class AuthenticationController {
     }
 
 
+    /**
+     * 🔄 ROTA DE REDIRECIONAMENTO - Converte links HTTP em deep links
+     * Esta rota recebe o token via HTTP e redireciona para o app via deep link
+     */
+    @GetMapping("/app/reset-password")
+    public ResponseEntity<String> redirectToAppResetPassword(@RequestParam("token") String token) {
+        Optional<PasswordResetToken> optionalToken = resetTokenRepository.findByToken(token);
+        
+        if (optionalToken.isEmpty()) {
+            try {
+                String errorHtml = emailService.loadRedirectErrorTemplate(
+                    "Token inválido", 
+                    "O link de redefinição de senha é inválido."
+                );
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .contentType(org.springframework.http.MediaType.TEXT_HTML)
+                    .body(errorHtml);
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro ao carregar página de erro.");
+            }
+        }
+
+        PasswordResetToken resetToken = optionalToken.get();
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            resetTokenRepository.delete(resetToken);
+            try {
+                String errorHtml = emailService.loadRedirectErrorTemplate(
+                    "Token expirado", 
+                    "O link de redefinição de senha expirou. Solicite um novo."
+                );
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .contentType(org.springframework.http.MediaType.TEXT_HTML)
+                    .body(errorHtml);
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro ao carregar página de erro.");
+            }
+        }
+
+        // Gerar deep link e carregar template de redirecionamento
+        // String deepLink = "condotech://reset-password?token=" + token;
+
+        // Para desenvolvimento com Expo, quando nós fizermos o aplicativo completo, vamos usar a URL de cima
+        String deepLink = "exp://" + backendIp + ":8081/--/reset-password?token=" + token;
+        
+        try {
+            String redirectHtml = emailService.loadRedirectTemplate(deepLink);
+            return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.TEXT_HTML)
+                .body(redirectHtml);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro ao carregar página de redirecionamento.");
+        }
+    }
+
+
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody @Valid ForgotPasswordDTO dto) {
         System.out.println("📧 Solicitação de redefinição de senha recebida para o e-mail: " + dto.email());
@@ -107,25 +172,22 @@ public class AuthenticationController {
         }
 
         try {
-            // Verificar se já existe um token para este usuário
             Optional<PasswordResetToken> existingToken = resetTokenRepository.findByUser(user);
             if (existingToken.isPresent()) {
                 resetTokenRepository.delete(existingToken.get());
             }
             
-            // Criar novo token
             String token = UUID.randomUUID().toString();
             PasswordResetToken resetToken = new PasswordResetToken(token, user);
             resetTokenRepository.save(resetToken);
 
-            // MUDANÇA AQUI: usar o esquema do app ao invés de URL web
-            // String resetLink = "condotech://reset-password?token=" + token;
-            String resetLink = "exp://192.168.18.127:8081/--/(auth)/reset-password?token=" + token;
+            // 🔥 Usar URL HTTP que redireciona para o app
+            String resetLink = backendUrl + "/auth/app/reset-password?token=" + token;
             String htmlContent = emailService.loadResetPasswordTemplate(user.getLogin(), resetLink);
             
             emailService.sendEmail(user.getEmail(), "Redefinição de Senha", htmlContent);
-            System.out.println("✅ E-mail enviado com sucesso");
             
+            System.out.println("✅ E-mail enviado com link de redirecionamento: " + resetLink);
             return ResponseEntity.ok(Map.of("message", "E-mail enviado com sucesso"));
             
         } catch (MessagingException e) {
@@ -143,6 +205,7 @@ public class AuthenticationController {
                 .body(Map.of("message", "Erro ao processar solicitação"));
         }
     }
+
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordDTO dto) {
         System.out.println("🔐 Tentando redefinir senha com token: " + dto.token());

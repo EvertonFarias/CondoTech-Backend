@@ -29,6 +29,7 @@ public class SecurityConfigurations {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers( "/auth/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/app/reset-password").permitAll()
                         .requestMatchers("/uploads/**").authenticated()
                         .anyRequest().authenticated()
                 )
