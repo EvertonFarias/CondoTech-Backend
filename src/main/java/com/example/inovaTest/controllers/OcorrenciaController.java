@@ -210,4 +210,28 @@ public class OcorrenciaController {
             })
             .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/morador/{moradorId}/abertas")
+    public List<OcorrenciaDTO> findOpenByMorador(@PathVariable Long moradorId) {
+        List<String> statusAbertos = List.of("ABERTA", "EM_ANDAMENTO");
+        return repository.findByMoradorIdAndStatusOcorrenciaInOrderByCreatedAtDesc(moradorId, statusAbertos)
+                .stream()
+                .map(OcorrenciaMapper::toDTO)
+                .toList();
+    }
+
+    @GetMapping("/count/morador/{moradorId}/abertas")
+    public ResponseEntity<Map<String, Long>> countOpenByMorador(@PathVariable Long moradorId) {
+        try {
+            List<String> statusAbertos = List.of("ABERTA", "EM_ANDAMENTO");
+            long count = repository.countByMoradorIdAndStatusOcorrenciaIn(moradorId, statusAbertos);
+            
+            Map<String, Long> response = new HashMap<>();
+            response.put("ocorrenciasAbertas", count);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
