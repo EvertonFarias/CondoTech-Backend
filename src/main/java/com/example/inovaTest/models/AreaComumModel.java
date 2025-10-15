@@ -1,25 +1,18 @@
 package com.example.inovaTest.models;
 
+import com.example.inovaTest.enums.TipoReserva;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.DecimalMin;
-import lombok.*;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "areas_comuns")
-@EqualsAndHashCode(of = "id")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class AreaComumModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,33 +22,43 @@ public class AreaComumModel {
     @JoinColumn(name = "id_condominio", nullable = false)
     private CondominioModel condominio;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, unique = true)
     @NotBlank(message = "Nome é obrigatório")
-    @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
     private String nome;
 
     @Column(columnDefinition = "TEXT")
     private String descricao;
-
-    @Column(name = "capacidade_maxima")
-    private Integer capacidadeMaxima;
-
-    @Column(name = "valor_taxa", precision = 10, scale = 2)
-    @DecimalMin(value = "0.0", inclusive = true, message = "Valor da taxa deve ser positivo")
-    private BigDecimal valorTaxa;
+    
+    @Column(length = 50)
+    private String icone;
 
     @Column(nullable = false)
-    private Boolean ativa = true;
+    private boolean ativa = true;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "valor_taxa", precision = 10, scale = 2)
+    @DecimalMin(value = "0.0", inclusive = true)
+    private BigDecimal valorTaxa;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+   
+    // relação N-para-N
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "area_comum_regras_associacao", // Nome da tabela de junção
+        joinColumns = @JoinColumn(name = "area_comum_id"),
+        inverseJoinColumns = @JoinColumn(name = "regra_id")
+    )
+    private Set<RegraModel> regras = new HashSet<>();
+    
+    // Lista de tipos de reserva permitidos (POR_HORA, DIARIA, etc.)
+    @ElementCollection(targetClass = TipoReserva.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "area_comum_tipos_reserva", joinColumns = @JoinColumn(name = "area_comum_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_reserva", nullable = false)
+    private Set<TipoReserva> tiposReservaDisponiveis;
 
-    // Relacionamentos
     @OneToMany(mappedBy = "areaComum", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ReservaModel> reservas;
+    
+    @OneToMany(mappedBy = "areaComum", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<AreaComumFotoModel> fotos;
 }

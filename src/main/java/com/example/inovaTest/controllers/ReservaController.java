@@ -1,92 +1,47 @@
 package com.example.inovaTest.controllers;
 
-import com.example.inovaTest.models.ReservaModel;
-import com.example.inovaTest.repositories.ReservaRepository;
+import com.example.inovaTest.dtos.areaComum.AreaComumDTO;
+import com.example.inovaTest.dtos.reserva.CreateReservaRequestDTO;
 import com.example.inovaTest.dtos.reserva.ReservaDTO;
-import com.example.inovaTest.mappers.ReservaMapper;
-import com.example.inovaTest.models.AreaComumModel;
-import com.example.inovaTest.models.MoradorModel;
-import com.example.inovaTest.repositories.AreaComumRepository;
-import com.example.inovaTest.repositories.MoradorRepository;
+import com.example.inovaTest.models.UserModel;
+import com.example.inovaTest.services.ReservaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
-@RequestMapping("/reservas")
+@RequestMapping("/api/reservas")
 public class ReservaController {
-    @Autowired
-    private ReservaRepository repository;
 
     @Autowired
-    private AreaComumRepository areaComumRepository;
+    private ReservaService reservaService;
 
-    @Autowired
-    private MoradorRepository moradorRepository;
-
-
-    @GetMapping
-    public List<ReservaDTO> findAll() {
-        return repository.findAll().stream().map(ReservaMapper::toDTO).toList();
+    @GetMapping("/areas")
+    public ResponseEntity<List<AreaComumDTO>> getAreasComuns() {
+        return ResponseEntity.ok(reservaService.getAllAreasComuns());
     }
 
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ReservaDTO> findById(@PathVariable Long id) {
-        return repository.findById(id)
-                .map(ReservaMapper::toDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/minhas")
+    public ResponseEntity<List<ReservaDTO>> getMinhasReservas(Authentication authentication) {
+        UserModel user = (UserModel) authentication.getPrincipal();
+        return ResponseEntity.ok(reservaService.getMinhasReservas(user));
     }
-
-
+    
     @PostMapping
-    public ReservaDTO create(@RequestBody ReservaDTO dto) {
-        ReservaModel model = ReservaMapper.toModel(dto);
-        if (dto.getAreaComumId() != null) {
-            AreaComumModel areaComum = areaComumRepository.findById(dto.getAreaComumId())
-                .orElseThrow(() -> new RuntimeException("AreaComum não encontrada"));
-            model.setAreaComum(areaComum);
-        }
-        if (dto.getMoradorId() != null) {
-            MoradorModel morador = moradorRepository.findById(dto.getMoradorId())
-                .orElseThrow(() -> new RuntimeException("Morador não encontrado"));
-            model.setMorador(morador);
-        }
-        return ReservaMapper.toDTO(repository.save(model));
+    public ResponseEntity<ReservaDTO> createReserva(@RequestBody @Valid CreateReservaRequestDTO request, Authentication authentication) {
+        UserModel user = (UserModel) authentication.getPrincipal();
+        ReservaDTO novaReserva = reservaService.createReserva(request, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novaReserva);
     }
-
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ReservaDTO> update(@PathVariable Long id, @RequestBody ReservaDTO dto) {
-        return repository.findById(id)
-                .map(existing -> {
-                    ReservaModel model = ReservaMapper.toModel(dto);
-                    model.setId(id);
-                    if (dto.getAreaComumId() != null) {
-                        AreaComumModel areaComum = areaComumRepository.findById(dto.getAreaComumId())
-                            .orElseThrow(() -> new RuntimeException("AreaComum não encontrada"));
-                        model.setAreaComum(areaComum);
-                    }
-                    if (dto.getMoradorId() != null) {
-                        MoradorModel morador = moradorRepository.findById(dto.getMoradorId())
-                            .orElseThrow(() -> new RuntimeException("Morador não encontrado"));
-                        model.setMorador(morador);
-                    }
-                    return ResponseEntity.ok(ReservaMapper.toDTO(repository.save(model)));
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
+    
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (repository.existsById(id)) {
-            repository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> cancelarReserva(@PathVariable Long id, Authentication authentication) {
+        UserModel user = (UserModel) authentication.getPrincipal();
+        reservaService.cancelarReserva(id, user);
+        return ResponseEntity.noContent().build();
     }
 }

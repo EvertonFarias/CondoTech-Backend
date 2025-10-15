@@ -1,16 +1,12 @@
 package com.example.inovaTest.models;
 
+import com.example.inovaTest.enums.StatusReserva; // 1. Importe o novo Enum
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -29,33 +25,22 @@ public class ReservaModel {
     private MoradorModel morador;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_area", nullable = false)
+    @JoinColumn(name = "id_area_comum", nullable = false)
     private AreaComumModel areaComum;
 
-    @Column(name = "data_reserva", nullable = false)
+    @Column(nullable = false)
     @NotNull(message = "Data da reserva é obrigatória")
     private LocalDate dataReserva;
 
-    @Column(name = "hora_inicio", nullable = false)
+    @Column(nullable = false)
     @NotNull(message = "Hora de início é obrigatória")
     private LocalTime horaInicio;
 
-    @Column(name = "hora_fim", nullable = false)
+    @Column(nullable = false)
     @NotNull(message = "Hora de fim é obrigatória")
     private LocalTime horaFim;
-
-    @Column(name = "status_reserva", length = 20, nullable = false)
-    @Size(max = 20, message = "Status da reserva deve ter no máximo 20 caracteres")
-    private String statusReserva = "PENDENTE"; // PENDENTE, CONFIRMADA, CANCELADA, FINALIZADA
-
-    @Column(columnDefinition = "TEXT")
-    private String observacoes;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusReserva status;
 }

@@ -54,10 +54,6 @@ public class CondominioModel {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Relacionamentos
-    @OneToMany(mappedBy = "condominio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<SindicoModel> sindicos;
-
     @OneToMany(mappedBy = "condominio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UnidadeModel> unidades;
 

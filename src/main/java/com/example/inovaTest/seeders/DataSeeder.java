@@ -16,14 +16,17 @@ import com.example.inovaTest.enums.TipoMorador;
 import com.example.inovaTest.enums.UserRole;
 import com.example.inovaTest.models.CondominioModel;
 import com.example.inovaTest.models.MoradorModel;
+import com.example.inovaTest.models.RegraModel; // <-- NOVO: Importe o RegraModel
 import com.example.inovaTest.models.UnidadeModel;
 import com.example.inovaTest.models.UserModel;
-import com.example.inovaTest.models.VehicleModel; // <-- Importe o VehicleModel
+import com.example.inovaTest.models.VehicleModel;
+import com.example.inovaTest.models.*;
 import com.example.inovaTest.repositories.CondominioRepository;
 import com.example.inovaTest.repositories.MoradorRepository;
+import com.example.inovaTest.repositories.RegraRepository; // <-- NOVO: Importe o RegraRepository
 import com.example.inovaTest.repositories.UnidadeRepository;
 import com.example.inovaTest.repositories.UserRepository;
-import com.example.inovaTest.repositories.VehicleRepository; // <-- Importe o VehicleRepository
+import com.example.inovaTest.repositories.VehicleRepository;
 
 @Component
 @Order(1000)
@@ -34,7 +37,8 @@ public class DataSeeder implements ApplicationListener<ApplicationReadyEvent> {
     private final CondominioRepository condominioRepository;
     private final UnidadeRepository unidadeRepository;
     private final MoradorRepository moradorRepository;
-    private final VehicleRepository vehicleRepository; // <-- Injeção do novo repositório
+    private final VehicleRepository vehicleRepository;
+    private final RegraRepository regraRepository; // <-- NOVO: Injeção do repositório de regras
     private boolean alreadySetup = false;
 
     public DataSeeder(
@@ -43,14 +47,16 @@ public class DataSeeder implements ApplicationListener<ApplicationReadyEvent> {
         CondominioRepository condominioRepository,
         UnidadeRepository unidadeRepository,
         MoradorRepository moradorRepository,
-        VehicleRepository vehicleRepository // <-- Injeção no construtor
+        VehicleRepository vehicleRepository,
+        RegraRepository regraRepository // <-- NOVO: Injeção no construtor
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.condominioRepository = condominioRepository;
         this.unidadeRepository = unidadeRepository;
         this.moradorRepository = moradorRepository;
-        this.vehicleRepository = vehicleRepository; // <-- Atribuição
+        this.vehicleRepository = vehicleRepository;
+        this.regraRepository = regraRepository; // <-- NOVO: Atribuição
     }
 
     @Override
@@ -63,6 +69,8 @@ public class DataSeeder implements ApplicationListener<ApplicationReadyEvent> {
 
         try {
             CondominioModel condominio = createCondominio();
+            createRegras(condominio); // <-- NOVO: Chama o método para criar as regras
+
             UnidadeModel unidadeAdmin = createUnidade(condominio, "302", "A");
             UnidadeModel unidadeUser = createUnidade(condominio, "105", "B");
 
@@ -87,6 +95,23 @@ public class DataSeeder implements ApplicationListener<ApplicationReadyEvent> {
         condominio.setCnpj("12.345.678/0001-90");
         return condominioRepository.save(condominio);
     }
+    
+    // NOVO MÉTODO PARA CRIAR REGRAS ===============================================
+    private void createRegras(CondominioModel condominio) {
+        System.out.println("Creating common area rules...");
+        List<RegraModel> regras = new ArrayList<>();
+        regras.add(new RegraModel(null, condominio, "Respeito ao Horário de Silêncio", "É proibido o uso de som alto e a produção de ruídos excessivos das 22h às 8h.", null));
+        regras.add(new RegraModel(null, condominio, "Limpeza e Conservação", "O espaço deve ser devolvido nas mesmas condições de limpeza em que foi entregue. Todo o lixo deve ser recolhido e descartado adequadamente.", null));
+        regras.add(new RegraModel(null, condominio, "Responsabilidade por Danos", "O morador responsável pela reserva será cobrado por quaisquer danos causados ao patrimônio do condomínio durante o uso.", null));
+        regras.add(new RegraModel(null, condominio, "Limite de Convidados", "Respeite o limite máximo de convidados especificado para cada área comum. Consulte o regimento interno.", null));
+        regras.add(new RegraModel(null, condominio, "Segurança na Piscina", "Menores de 12 anos devem estar acompanhados por um responsável. É proibido o uso de recipientes de vidro na área da piscina.", null));
+        regras.add(new RegraModel(null, condominio, "Uso da Churrasqueira", "Ao final do uso, a churrasqueira deve ser limpa e as cinzas devidamente apagadas e descartadas em local seguro.", null));
+
+        regraRepository.saveAll(regras);
+        System.out.println("✓ " + regras.size() + " common area rules created.");
+    }
+    // ==============================================================================
+
 
     private UnidadeModel createUnidade(CondominioModel condominio, String numero, String bloco) {
         UnidadeModel unidade = new UnidadeModel();

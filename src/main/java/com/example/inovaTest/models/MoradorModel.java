@@ -26,7 +26,7 @@ public class MoradorModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_unidade", nullable = false)
     private UnidadeModel unidade;
 
@@ -75,9 +75,6 @@ public class MoradorModel {
 
     @OneToMany(mappedBy = "morador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<NotificacaoModel> notificacoes;
-
-    @OneToMany(mappedBy = "morador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<AnaliseIaModel> analisesIa;
 
     @OneToMany(mappedBy = "morador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<VehicleModel> veiculos;
