@@ -11,11 +11,13 @@ import com.example.inovaTest.repositories.MoradorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/reservas")
+@CrossOrigin(origins = "*")
 public class ReservaController {
     @Autowired
     private ReservaRepository repository;
@@ -26,12 +28,10 @@ public class ReservaController {
     @Autowired
     private MoradorRepository moradorRepository;
 
-
     @GetMapping
     public List<ReservaDTO> findAll() {
         return repository.findAll().stream().map(ReservaMapper::toDTO).toList();
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<ReservaDTO> findById(@PathVariable Long id) {
@@ -40,7 +40,6 @@ public class ReservaController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
 
     @PostMapping
     public ReservaDTO create(@RequestBody ReservaDTO dto) {
@@ -57,7 +56,6 @@ public class ReservaController {
         }
         return ReservaMapper.toDTO(repository.save(model));
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<ReservaDTO> update(@PathVariable Long id, @RequestBody ReservaDTO dto) {
@@ -78,6 +76,26 @@ public class ReservaController {
                     return ResponseEntity.ok(ReservaMapper.toDTO(repository.save(model)));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Buscar todas as reservas próximas (hoje ou futuras)
+    @GetMapping("/proximas")
+    public List<ReservaDTO> findUpcoming() {
+        LocalDate hoje = LocalDate.now();
+        return repository.findByDataReservaGreaterThanEqualOrderByDataReservaAsc(hoje)
+                .stream()
+                .map(ReservaMapper::toDTO)
+                .toList();
+    }
+
+    // Buscar reservas próximas de um morador específico
+    @GetMapping("/morador/{moradorId}/proximas")
+    public List<ReservaDTO> findUpcomingByMorador(@PathVariable Long moradorId) {
+        LocalDate hoje = LocalDate.now();
+        return repository.findByMoradorIdAndDataReservaGreaterThanEqualOrderByDataReservaAsc(moradorId, hoje)
+                .stream()
+                .map(ReservaMapper::toDTO)
+                .toList();
     }
 
     @DeleteMapping("/{id}")

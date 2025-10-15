@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.List;
 
 public interface OcorrenciaRepository extends JpaRepository<OcorrenciaModel, Long> {
 
@@ -32,5 +33,14 @@ public interface OcorrenciaRepository extends JpaRepository<OcorrenciaModel, Lon
         @Param("status") String status, 
         @Param("tipo") String tipo, 
         Pageable pageable
+    );
+
+    // Contar ocorrências em aberto de um morador
+    long countByMoradorIdAndStatusOcorrenciaIn(Long moradorId, List<String> statuses);
+    
+    // Buscar ocorrências em aberto de um morador
+    List<OcorrenciaModel> findByMoradorIdAndStatusOcorrenciaInOrderByCreatedAtDesc(
+        Long moradorId, 
+        List<String> statuses
     );
 }

@@ -30,6 +30,10 @@ public class SecurityConfigurations {
                         .requestMatchers( "/auth/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/app/reset-password").permitAll()
+                        
+                        .requestMatchers("/moradores/**").hasRole("ADMIN")
+                        .requestMatchers("/users/**").hasRole("ADMIN")
+
                         .requestMatchers("/uploads/**").authenticated()
                         .anyRequest().authenticated()
                 )
