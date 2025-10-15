@@ -32,19 +32,8 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id) {
         return userRepository.findById(id)
-            .map(user -> new UserResponseDTO(
-                user.getId(),
-                user.getLogin(),
-                user.getEmail(),
-                user.getRole(),
-                user.isVerifiedEmail(),
-                user.getGender(),
-                user.getDateOfBirth(),
-                user.isEnabled(),
-                user.getProfilePicture()
-            ))
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+                .map(user -> ResponseEntity.ok(new UserResponseDTO(user)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/search/{username}")
@@ -66,26 +55,6 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-
-    
- 
-
-    @PutMapping("/{id}/profile-pic")
-    public ResponseEntity putProfilePicturePath(@PathVariable UUID id, @RequestBody ProfilePictureDTO entity) {
-        Optional<UserModel> userOptional = userRepository.findById(id);
-        if(!userOptional.isPresent()){
-            return ResponseEntity.notFound().build();
-        }
-        UserModel user = userOptional.get();
-        user.setProfilePicture(entity.getProfilePicture());
-        userRepository.save(user);
-        UserResponseDTO responseDTO = new UserResponseDTO(
-            user.getId(),
-            user.getProfilePicture()
-        );
-        return ResponseEntity.ok(responseDTO);
-    }
-    
 
     @GetMapping("/search/{query}/exclude/{userId}")
 public ResponseEntity<List<UserSearchResponseDTO>> searchUsersByUsernameExcludingCurrent(

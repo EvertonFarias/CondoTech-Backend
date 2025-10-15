@@ -14,7 +14,7 @@ public class MoradorMapper {
         dto.setCpf(model.getCpf());
         dto.setTelefone(model.getTelefone());
         dto.setEmail(model.getEmail());
-        dto.setTipoMorador(model.getTipoMorador());
+        dto.setTipoMorador(model.getTipo());
         dto.setAtivo(model.getAtivo());
         return dto;
     }
@@ -28,7 +28,7 @@ public class MoradorMapper {
         model.setCpf(dto.getCpf());
         model.setTelefone(dto.getTelefone());
         model.setEmail(dto.getEmail());
-        model.setTipoMorador(dto.getTipoMorador());
+        model.setTipo(dto.getTipoMorador());
         model.setAtivo(dto.getAtivo());
         return model;
     }

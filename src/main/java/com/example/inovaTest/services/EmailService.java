@@ -49,8 +49,26 @@ public class EmailService {
         ClassPathResource resource = new ClassPathResource("templates/email/reset-password.html");
         String htmlContent = new String(Files.readAllBytes(Path.of(resource.getURI())));
 
-        return htmlContent.replace("${username}", username)
-                         .replace("${resetLink}", resetLink)
-                         .replace("${oceanBackgroundUrl}", "https://example.com/ocean-background.jpg");
+       return htmlContent.replace("{{username}}", username)
+                          .replace("{{resetLink}}", resetLink);
     }
+
+    public String loadRedirectTemplate(String deepLink) throws IOException {
+    ClassPathResource resource = new ClassPathResource("templates/redirect/app-redirect.html");
+    String htmlContent = new String(Files.readAllBytes(Path.of(resource.getURI())));
+    
+    return htmlContent.replace("{{deepLink}}", deepLink);
+}
+
+/**
+ * Carrega o template HTML de erro (token inválido/expirado)
+ */
+public String loadRedirectErrorTemplate(String title, String message) throws IOException {
+    ClassPathResource resource = new ClassPathResource("templates/redirect/redirect-error.html");
+    String htmlContent = new String(Files.readAllBytes(Path.of(resource.getURI())));
+    
+    return htmlContent
+        .replace("{{title}}", title)
+        .replace("{{message}}", message);
+}
 }

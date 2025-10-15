@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecionando para o App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 32px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            background: #2563eb;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 24px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .logo-container svg {
+            width: 48px;
+            height: 48px;
+            color: white;
+        }
+
+        h1 {
+            color: #1e3a8a;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            color: #4b5563;
+            font-size: 16px;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 24px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status-message {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .manual-button {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .manual-button:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .manual-button:active {
+            transform: translateY(0);
+        }
+
+        .help-text {
+            margin-top: 24px;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-container">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+        </div>
+
+        <h1>Abrindo o App</h1>
+        <p class="subtitle">Você está sendo redirecionado para o aplicativo CondoTech para redefinir sua senha.</p>
+
+        <div class="spinner"></div>
+
+        <p class="status-message" id="statusMessage">Redirecionando automaticamente...</p>
+
+        <a href="{{deepLink}}" class="manual-button" id="manualButton">
+            Abrir App Manualmente
+        </a>
+
+        <p class="help-text">
+            Se o app não abrir automaticamente, clique no botão acima ou verifique se o CondoTech está instalado no seu dispositivo.
+        </p>
+    </div>
+
+    <script>
+        // Tentativa automática de redirecionamento
+        const deepLink = '{{deepLink}}';
+        let redirectAttempted = false;
+
+        function attemptRedirect() {
+            if (redirectAttempted) return;
+            redirectAttempted = true;
+
+            // Criar um iframe oculto para tentar abrir o deep link
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+
+            // Tentar redirecionar também via window.location
+            setTimeout(() => {
+                window.location.href = deepLink;
+            }, 100);
+
+            // Atualizar mensagem após alguns segundos
+            setTimeout(() => {
+                document.getElementById('statusMessage').textContent = 
+                    'O app não abriu? Use o botão abaixo.';
+                document.querySelector('.spinner').style.display = 'none';
+            }, 3000);
+        }
+
+        // Tentar redirecionamento quando a página carregar
+        window.addEventListener('load', () => {
+            setTimeout(attemptRedirect, 500);
+        });
+
+        // Garantir que o botão manual funcione
+        document.getElementById('manualButton').addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = deepLink;
+        });
+    </script>
+</body>
+</html>
